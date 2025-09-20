@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 using System.Collections;
+using Unity.VisualScripting;
 
 public class FrogController : MonoBehaviour
 {
@@ -8,6 +9,10 @@ public class FrogController : MonoBehaviour
 
     [SerializeField] float moveTime = 0.15f;
     [SerializeField] bool canMove;
+    [SerializeField] private bool isDead;
+    [SerializeField] private bool onRiver;
+    [SerializeField] private bool onPlatform;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -26,25 +31,28 @@ public class FrogController : MonoBehaviour
 
     void PlayerUpdate()
     {
-        if (Input.GetKeyDown(KeyCode.UpArrow))
+        if (!isDead)
         {
-            transform.rotation = Quaternion.Euler(0, 0, 0);
-            PlayerMove(Vector2.up);
-        }
-        if (Input.GetKeyDown(KeyCode.DownArrow))
-        {
-            transform.rotation = Quaternion.Euler(0, 0, 180);
-            PlayerMove(Vector2.down);
-        }
-        if (Input.GetKeyDown(KeyCode.LeftArrow))
-        {
-            transform.rotation = Quaternion.Euler(0, 0, 90);
-            PlayerMove(Vector2.left);
-        }
-        if (Input.GetKeyDown(KeyCode.RightArrow))
-        {
-            transform.rotation = Quaternion.Euler(0, 0, -90);
-            PlayerMove(Vector2.right);
+            if (Input.GetKeyDown(KeyCode.UpArrow))
+            {
+                transform.rotation = Quaternion.Euler(0, 0, 0);
+                PlayerMove(Vector2.up);
+            }
+            if (Input.GetKeyDown(KeyCode.DownArrow))
+            {
+                transform.rotation = Quaternion.Euler(0, 0, 180);
+                PlayerMove(Vector2.down);
+            }
+            if (Input.GetKeyDown(KeyCode.LeftArrow))
+            {
+                transform.rotation = Quaternion.Euler(0, 0, 90);
+                PlayerMove(Vector2.left);
+            }
+            if (Input.GetKeyDown(KeyCode.RightArrow))
+            {
+                transform.rotation = Quaternion.Euler(0, 0, -90);
+                PlayerMove(Vector2.right);
+            }
         }
     }
 
@@ -53,7 +61,24 @@ public class FrogController : MonoBehaviour
         canMove = false;
         anim.SetTrigger("Hop");
         Vector2 _destination = transform.position + (Vector3)_direction;
-        StartCoroutine(LerpMove(_destination));
+
+        Collider2D platform = Physics2D.OverlapBox(_destination, Vector2.zero, 0, LayerMask.GetMask("Platform"));
+        Collider2D barrier = Physics2D.OverlapBox(_destination, Vector2.zero, 0, LayerMask.GetMask("Barrier"));
+
+        //if(barrier != null) return;
+
+        if (platform != null)
+        {
+            transform.SetParent(platform.transform);
+            onPlatform = true;
+        }
+        else
+        {
+            transform.SetParent(null);
+            onPlatform = false;
+        }
+
+            StartCoroutine(LerpMove(_destination));
         //transform.position += (Vector3)_direction;
     }
 
@@ -72,6 +97,41 @@ public class FrogController : MonoBehaviour
         }
         transform.position = _destination;
         yield return new WaitForSeconds(moveTime);
+        if (onRiver)
+        {
+            if (!onPlatform)
+            {
+                StartCoroutine(FrogDeath());
+            }
+        }
         canMove = true;
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.gameObject.tag == "Obstacle")
+            StartCoroutine(FrogDeath());
+        if (other.gameObject.tag == "River")
+            onRiver = true;
+    }
+
+    private void OnTriggerExit2D(Collider2D other)
+    {
+        if (other.gameObject.tag == "River")
+            onRiver = false;
+    }
+
+    public void KillPlayer()
+    {
+        StartCoroutine(FrogDeath());
+    }
+
+    IEnumerator FrogDeath()
+    {
+        isDead = true;
+        anim.SetTrigger("Dead");
+        yield return new WaitForSeconds(1.5f);
+        GameManager.Instance.SpawnFrog();
+        Destroy(gameObject);
     }
 }
