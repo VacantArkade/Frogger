@@ -13,6 +13,8 @@ public class FrogController : MonoBehaviour
     [SerializeField] private bool onRiver;
     [SerializeField] private bool onPlatform;
 
+    private Vector3 gameBorder;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -113,6 +115,9 @@ public class FrogController : MonoBehaviour
             StartCoroutine(FrogDeath());
         if (other.gameObject.tag == "River")
             onRiver = true;
+
+        if (other.gameObject.tag == "Kill")
+            StartCoroutine(FrogDeath());
     }
 
     private void OnTriggerExit2D(Collider2D other)
@@ -133,5 +138,13 @@ public class FrogController : MonoBehaviour
         yield return new WaitForSeconds(1.5f);
         GameManager.Instance.SpawnFrog();
         Destroy(gameObject);
+    }
+
+    private void LateUpdate()
+    {
+        gameBorder = transform.position;
+        gameBorder.x = Mathf.Clamp(gameBorder.x, -4, 4);
+        gameBorder.y = Mathf.Clamp(gameBorder.y, -6, 9);
+        transform.position = gameBorder;
     }
 }
