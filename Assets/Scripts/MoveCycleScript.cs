@@ -1,45 +1,48 @@
-using UnityEngine;
-using System;
 using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
 
-public class MoveCycleScript : MonoBehaviour
+public class MoveCycle : MonoBehaviour
 {
-    //Control the speed and direction
-    [SerializeField] float moveSpeed = 1f;
+    [Header("Motion")]
+    public float moveSpeed = 2f;
     public Vector2 moveDirection = Vector2.right;
 
-    //Control the object transition across screen
+    [Header("Wrapping")]
     public int objSize = 1;
-    [SerializeField] Vector2 rightEdge;
-    [SerializeField] Vector2 leftEdge;
+    [SerializeField] private Vector2 leftEdge;
+    [SerializeField] private Vector2 rightEdge;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    private void Start()
     {
-        leftEdge = Camera.main.ViewportToWorldPoint(Vector2.zero);
-        rightEdge = Camera.main.ViewportToWorldPoint(Vector2.right);
+        Vector3 left3 = Camera.main.ViewportToWorldPoint(new Vector3(0f, 0.5f, 0f));
+        Vector3 right3 = Camera.main.ViewportToWorldPoint(new Vector3(1f, 0.5f, 0f));
+        leftEdge = new Vector2(left3.x, left3.y);
+        rightEdge = new Vector2(right3.x, right3.y);
     }
 
-    // Update is called once per frame
-    void Update()
+    private void Update()
     {
-        if(moveDirection.x > 0 && (transform.position.x - objSize) > rightEdge.x)
+        transform.Translate(moveDirection * moveSpeed * Time.deltaTime);
+
+        if (moveDirection.x > 0f)
         {
-            Vector2 _position = transform.position;
-            _position.x = leftEdge.x - objSize;
-            transform.position = _position;
+            if (transform.position.x - objSize > rightEdge.x)
+            {
+                Vector3 p = transform.position;
+                p.x = leftEdge.x - objSize;
+                transform.position = p;
+            }
         }
 
-        else if (moveDirection.x < 0 && (transform.position.x + objSize) < rightEdge.x)
+        else if (moveDirection.x < 0f)
         {
-            Vector2 _position = transform.position;
-            _position.x = rightEdge.x + objSize;
-            transform.position = _position;
-        }
-
-        else
-        {
-            transform.Translate(moveDirection * moveSpeed * Time.deltaTime);
+            if (transform.position.x + objSize < leftEdge.x)
+            {
+                Vector3 p = transform.position;
+                p.x = rightEdge.x + objSize;
+                transform.position = p;
+            }
         }
     }
 }

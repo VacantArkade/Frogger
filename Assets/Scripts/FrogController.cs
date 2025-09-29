@@ -136,6 +136,7 @@ public class FrogController : MonoBehaviour
         isDead = true;
         anim.SetTrigger("Dead");
         yield return new WaitForSeconds(1.5f);
+        GameManager.Instance.lifeCounter--;
         GameManager.Instance.SpawnFrog();
         Destroy(gameObject);
     }
